@@ -11,3 +11,5 @@ description = "Uma interface de linha de comando para utilização da linguagem 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+gl_core = { path = "../gl-core", version = "0.1.0-alpha" }
+gl_runtime = { path = "../gl-runtime", version = "0.1.0-alpha" }
