@@ -40,3 +40,8 @@ impl Flags {
 		Ok(flags)
 	}
 }
+
+fn repl_parse(flags: &mut Flags, _: &clap::ArgMatches) {
+	flags.repl = true;
+	flags.subcommand = GLanguageSubCommand::Repl;
+}
