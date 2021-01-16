@@ -44,6 +44,8 @@ fn run_subcommand(flags: flags::Flags) -> Result<(), AnyError> {
 
 fn run_repl(_: flags::Flags) -> Result<(), AnyError> {
 	let mut program_state: ProgramState = ProgramState::new();
+	program_state.env.crate_module = format!("repl");
+	program_state.env.add_module(format!("repl"));
 	let module: String = format!("repl");
 
 	tools::repl::run(&module, &mut program_state)
