@@ -4,9 +4,11 @@ use clap::crate_version;
 use gl_core::ast::AbstractSyntaxTree;
 use gl_core::error::AnyError;
 use gl_core::lexer::Lexer;
+use gl_core::object::Object;
 use gl_core::parser::Parser;
 use gl_core::state::ProgramState;
 use gl_core::token::Token;
+use gl_runtime::Runtime;
 use rustyline::{error::ReadlineError, Cmd, Editor, KeyEvent, Modifiers};
 
 pub fn run(module: &String, program: &mut ProgramState) -> Result<(), AnyError> {
@@ -41,6 +43,20 @@ pub fn run(module: &String, program: &mut ProgramState) -> Result<(), AnyError> 
 						continue;
 					}
 				};
+
+				let runtime: Runtime = Runtime::new();
+				let object: Object = match runtime.run(ast, module, program) {
+					Ok(ast) => ast,
+					Err(exception) => {
+						eprintln!("{}", exception);
+						continue;
+					}
+				};
+
+				match object {
+					Object::Null => {}
+					o => println!("{}", o),
+				}
 			}
 			Err(ReadlineError::Interrupted) => {
 				println!("exit using ctrl+d");
