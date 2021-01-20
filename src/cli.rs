@@ -19,6 +19,7 @@ pub fn create_app<'a, 'b>() -> App<'a, 'b> {
 		.usage(USAGE.trim())
 		.subcommand(repl_subcommand())
 		.subcommand(eval_subcommand())
+		.subcommand(run_subcommand())
 }
 
 fn repl_subcommand<'a, 'b>() -> App<'a, 'b> {
@@ -29,4 +30,10 @@ fn eval_subcommand<'a, 'b>() -> App<'a, 'b> {
 	SubCommand::with_name("eval")
 		.about("Evaluate source from the command line")
 		.arg(Arg::with_name("source").required(true))
+}
+
+fn run_subcommand<'a, 'b>() -> App<'a, 'b> {
+	SubCommand::with_name("run")
+		.about("Run program from a script file")
+		.arg(Arg::with_name("filename").required(true))
 }

@@ -40,6 +40,7 @@ fn run_subcommand(flags: flags::Flags) -> Result<(), AnyError> {
 	match flags.clone().subcommand {
 		GLanguageSubCommand::Repl => run_repl(flags),
 		GLanguageSubCommand::Eval { source } => run_eval(source, flags),
+		GLanguageSubCommand::Run { filename } => run_run(filename, flags),
 	}
 }
 
@@ -59,4 +60,13 @@ fn run_eval(source: String, _: flags::Flags) -> Result<(), AnyError> {
 	let module: String = format!("eval");
 
 	tools::eval::run(source, &module, &mut program_state)
+}
+
+fn run_run(filename: String, _: flags::Flags) -> Result<(), AnyError> {
+	let mut program_state: ProgramState = ProgramState::new();
+	program_state.env.crate_module = format!("{}", &filename);
+	program_state.env.add_module(format!("{}", &filename));
+	let module: String = format!("{}", &filename);
+
+	tools::run::run(filename, &module, &mut program_state)
 }
