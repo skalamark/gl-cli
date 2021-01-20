@@ -6,6 +6,7 @@ use clap::{App, ArgMatches};
 #[derive(Clone, Debug)]
 pub enum GLanguageSubCommand {
 	Repl,
+	Eval { source: String },
 }
 
 impl Default for GLanguageSubCommand {
@@ -33,6 +34,8 @@ impl Flags {
 
 		if let Some(m) = matches.subcommand_matches("repl") {
 			repl_parse(&mut flags, m);
+		} else if let Some(m) = matches.subcommand_matches("eval") {
+			eval_parse(&mut flags, m);
 		} else {
 			repl_parse(&mut flags, &matches);
 		}
@@ -44,4 +47,10 @@ impl Flags {
 fn repl_parse(flags: &mut Flags, _: &clap::ArgMatches) {
 	flags.repl = true;
 	flags.subcommand = GLanguageSubCommand::Repl;
+}
+
+fn eval_parse(flags: &mut Flags, matches: &clap::ArgMatches) {
+	flags.repl = true;
+	let source = matches.value_of("source").unwrap().to_string();
+	flags.subcommand = GLanguageSubCommand::Eval { source };
 }

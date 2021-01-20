@@ -21,7 +21,7 @@ fn main() {
 		Err(err) => unwrap_or_exit(Err(AnyError::from(err))),
 	};
 
-	run_subcommand(flags);
+	run_subcommand(flags).expect("");
 }
 
 fn unwrap_or_exit<T>(result: Result<T, AnyError>) -> T {
@@ -39,6 +39,7 @@ fn run_subcommand(flags: flags::Flags) -> Result<(), AnyError> {
 
 	match flags.clone().subcommand {
 		GLanguageSubCommand::Repl => run_repl(flags),
+		GLanguageSubCommand::Eval { source } => run_eval(source, flags),
 	}
 }
 
@@ -49,4 +50,13 @@ fn run_repl(_: flags::Flags) -> Result<(), AnyError> {
 	let module: String = format!("repl");
 
 	tools::repl::run(&module, &mut program_state)
+}
+
+fn run_eval(source: String, _: flags::Flags) -> Result<(), AnyError> {
+	let mut program_state: ProgramState = ProgramState::new();
+	program_state.env.crate_module = format!("eval");
+	program_state.env.add_module(format!("eval"));
+	let module: String = format!("eval");
+
+	tools::eval::run(source, &module, &mut program_state)
 }

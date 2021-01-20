@@ -1,7 +1,7 @@
 // Copyright 2021 the GLanguage authors. All rights reserved. MIT license.
 
 use clap::crate_version;
-use clap::{App, SubCommand};
+use clap::{App, Arg, SubCommand};
 
 const USAGE: &str = "
 gl [SUBCOMMAND]
@@ -18,8 +18,15 @@ pub fn create_app<'a, 'b>() -> App<'a, 'b> {
 		.about("Interface de linha de comando para utilização da linguagem de script GLanguage")
 		.usage(USAGE.trim())
 		.subcommand(repl_subcommand())
+		.subcommand(eval_subcommand())
 }
 
 fn repl_subcommand<'a, 'b>() -> App<'a, 'b> {
 	SubCommand::with_name("repl").about("Read Eval Print Loop")
+}
+
+fn eval_subcommand<'a, 'b>() -> App<'a, 'b> {
+	SubCommand::with_name("eval")
+		.about("Evaluate source from the command line")
+		.arg(Arg::with_name("source").required(true))
 }
