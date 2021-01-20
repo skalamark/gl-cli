@@ -45,7 +45,7 @@ pub fn run(filename: String, module: &String, program: &mut ProgramState) -> Res
 
 	let runtime: Runtime = Runtime::new();
 	let _object: Object = match runtime.run(ast, module, program) {
-		Ok(ast) => ast,
+		Ok(object) => object,
 		Err(exception) => {
 			eprintln!("{}", exception);
 			return Ok(());

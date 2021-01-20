@@ -30,7 +30,7 @@ pub fn run(source: String, module: &String, program: &mut ProgramState) -> Resul
 
 	let runtime: Runtime = Runtime::new();
 	let object: Object = match runtime.run(ast, module, program) {
-		Ok(ast) => ast,
+		Ok(object) => object,
 		Err(exception) => {
 			eprintln!("{}", exception);
 			return Ok(());
