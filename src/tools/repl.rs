@@ -17,6 +17,7 @@ pub fn run(module: &String, program: &mut ProgramState) -> Result<(), AnyError> 
 
 	editor.bind_sequence(KeyEvent::new('\r', Modifiers::NONE), Cmd::Newline);
 	editor.bind_sequence(KeyEvent::alt('\r'), Cmd::AcceptLine);
+	editor.bind_sequence(KeyEvent::new('\t', Modifiers::NONE), Cmd::Insert(1, format!("\t")));
 
 	println!("GL {}", crate_version!());
 	println!("exit using ctrl+d");
