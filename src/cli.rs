@@ -36,4 +36,5 @@ fn run_subcommand<'a, 'b>() -> App<'a, 'b> {
 	SubCommand::with_name("run")
 		.about("Run program from a script file")
 		.arg(Arg::with_name("filename").required(true))
+		.arg(Arg::with_name("inspect").short("i").required(false))
 }

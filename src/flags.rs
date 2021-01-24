@@ -7,7 +7,7 @@ use clap::{App, ArgMatches};
 pub enum GLanguageSubCommand {
 	Repl,
 	Eval { source: String },
-	Run { filename: String },
+	Run { filename: String, inspect: bool },
 }
 
 impl Default for GLanguageSubCommand {
@@ -54,12 +54,13 @@ fn repl_parse(flags: &mut Flags, _: &clap::ArgMatches) {
 
 fn eval_parse(flags: &mut Flags, matches: &clap::ArgMatches) {
 	flags.repl = true;
-	let source = matches.value_of("source").unwrap().to_string();
+	let source: String = matches.value_of("source").unwrap().to_string();
 	flags.subcommand = GLanguageSubCommand::Eval { source };
 }
 
 fn run_parse(flags: &mut Flags, matches: &clap::ArgMatches) {
 	flags.repl = true;
-	let filename = matches.value_of("filename").unwrap().to_string();
-	flags.subcommand = GLanguageSubCommand::Run { filename };
+	let filename: String = matches.value_of("filename").unwrap().to_string();
+	let inspect: bool = matches.is_present("inspect");
+	flags.subcommand = GLanguageSubCommand::Run { filename, inspect };
 }
