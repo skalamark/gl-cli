@@ -10,6 +10,7 @@ use gl_core::state::ProgramState;
 use gl_core::token::Token;
 use gl_runtime::Runtime;
 use rustyline::{error::ReadlineError, Cmd, Editor, KeyEvent, Modifiers};
+use std::rc::Rc;
 
 pub fn run(module: &String, program: &mut ProgramState) -> Result<(), AnyError> {
 	let mut editor: Editor<()> = Editor::<()>::new();
@@ -17,7 +18,10 @@ pub fn run(module: &String, program: &mut ProgramState) -> Result<(), AnyError> 
 
 	editor.bind_sequence(KeyEvent::new('\r', Modifiers::NONE), Cmd::Newline);
 	editor.bind_sequence(KeyEvent::alt('\r'), Cmd::AcceptLine);
-	editor.bind_sequence(KeyEvent::new('\t', Modifiers::NONE), Cmd::Insert(1, format!("\t")));
+	editor.bind_sequence(
+		KeyEvent::new('\t', Modifiers::NONE),
+		Cmd::Insert(1, format!("\t")),
+	);
 
 	println!("GL {}", crate_version!());
 	println!("exit using ctrl+d");
@@ -45,7 +49,8 @@ pub fn run(module: &String, program: &mut ProgramState) -> Result<(), AnyError> 
 					}
 				};
 
-				let runtime: Runtime = Runtime::new();
+				let runtime: Runtime =
+					Runtime::new_from_env(Rc::clone(&program.env.modules[module]));
 				let object: Object = match runtime.run(ast, module, program) {
 					Ok(object) => object,
 					Err(exception) => {
@@ -56,7 +61,7 @@ pub fn run(module: &String, program: &mut ProgramState) -> Result<(), AnyError> 
 
 				match object {
 					Object::Null => {}
-					o => println!("{}", o),
+					object => println!("{}", object),
 				}
 			}
 			Err(ReadlineError::Interrupted) => {

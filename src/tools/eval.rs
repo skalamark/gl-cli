@@ -8,6 +8,7 @@ use gl_core::parser::Parser;
 use gl_core::state::ProgramState;
 use gl_core::token::Token;
 use gl_runtime::Runtime;
+use std::rc::Rc;
 
 pub fn run(source: String, module: &String, program: &mut ProgramState) -> Result<(), AnyError> {
 	let mut lexer: Lexer = Lexer::new();
@@ -28,7 +29,7 @@ pub fn run(source: String, module: &String, program: &mut ProgramState) -> Resul
 		}
 	};
 
-	let runtime: Runtime = Runtime::new();
+	let runtime: Runtime = Runtime::new_from_env(Rc::clone(&program.env.modules[module]));
 	let object: Object = match runtime.run(ast, module, program) {
 		Ok(object) => object,
 		Err(exception) => {
@@ -39,7 +40,7 @@ pub fn run(source: String, module: &String, program: &mut ProgramState) -> Resul
 
 	match object {
 		Object::Null => {}
-		o => println!("{}", o),
+		object => println!("{}", object),
 	}
 
 	Ok(())

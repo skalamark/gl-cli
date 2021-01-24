@@ -3,11 +3,11 @@
 use gl_core::ast::AbstractSyntaxTree;
 use gl_core::error::AnyError;
 use gl_core::lexer::Lexer;
-use gl_core::object::Object;
 use gl_core::parser::Parser;
 use gl_core::state::ProgramState;
 use gl_core::token::Token;
 use gl_runtime::Runtime;
+use std::rc::Rc;
 
 pub fn run(filename: String, module: &String, program: &mut ProgramState) -> Result<(), AnyError> {
 	let source: String = {
@@ -43,9 +43,9 @@ pub fn run(filename: String, module: &String, program: &mut ProgramState) -> Res
 		}
 	};
 
-	let runtime: Runtime = Runtime::new();
-	let _object: Object = match runtime.run(ast, module, program) {
-		Ok(object) => object,
+	let runtime: Runtime = Runtime::new_from_env(Rc::clone(&program.env.modules[module]));
+	match runtime.run(ast, module, program) {
+		Ok(_) => {}
 		Err(exception) => {
 			eprintln!("{}", exception);
 			return Ok(());
