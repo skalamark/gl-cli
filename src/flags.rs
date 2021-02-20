@@ -8,6 +8,7 @@ pub enum GLanguageSubCommand {
 	Repl,
 	Eval { source: String },
 	Run { filename: String, inspect: bool },
+	Compile { filename: String },
 }
 
 impl Default for GLanguageSubCommand {
@@ -39,6 +40,8 @@ impl Flags {
 			eval_parse(&mut flags, m);
 		} else if let Some(m) = matches.subcommand_matches("run") {
 			run_parse(&mut flags, m);
+		} else if let Some(m) = matches.subcommand_matches("compile") {
+			compile_parse(&mut flags, m);
 		} else {
 			repl_parse(&mut flags, &matches);
 		}
@@ -63,4 +66,10 @@ fn run_parse(flags: &mut Flags, matches: &clap::ArgMatches) {
 	let filename: String = matches.value_of("filename").unwrap().to_string();
 	let inspect: bool = matches.is_present("inspect");
 	flags.subcommand = GLanguageSubCommand::Run { filename, inspect };
+}
+
+fn compile_parse(flags: &mut Flags, matches: &clap::ArgMatches) {
+	flags.repl = true;
+	let filename: String = matches.value_of("filename").unwrap().to_string();
+	flags.subcommand = GLanguageSubCommand::Compile { filename };
 }

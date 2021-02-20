@@ -20,6 +20,7 @@ pub fn create_app<'a, 'b>() -> App<'a, 'b> {
 		.subcommand(repl_subcommand())
 		.subcommand(eval_subcommand())
 		.subcommand(run_subcommand())
+		.subcommand(compile_subcommand())
 }
 
 fn repl_subcommand<'a, 'b>() -> App<'a, 'b> {
@@ -37,4 +38,10 @@ fn run_subcommand<'a, 'b>() -> App<'a, 'b> {
 		.about("Run program from a script file")
 		.arg(Arg::with_name("filename").required(true))
 		.arg(Arg::with_name("inspect").short("i").required(false))
+}
+
+fn compile_subcommand<'a, 'b>() -> App<'a, 'b> {
+	SubCommand::with_name("compile")
+		.about("Compile program from a script file")
+		.arg(Arg::with_name("filename").required(true))
 }

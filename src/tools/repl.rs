@@ -1,18 +1,17 @@
 // Copyright 2021 the GLanguage authors. All rights reserved. MIT license.
 
 use clap::crate_version;
-use gl_core::ast::AbstractSyntaxTree;
 use gl_core::error::AnyError;
 use gl_core::lexer::Lexer;
-use gl_core::object::Object;
+use gl_core::object::{Null, Object};
 use gl_core::parser::Parser;
+use gl_core::source::Source;
 use gl_core::state::ProgramState;
-use gl_core::token::Token;
 use gl_runtime::Runtime;
 use rustyline::{error::ReadlineError, Cmd, Editor, KeyEvent, Modifiers};
-use std::rc::Rc;
+use std::sync::Arc;
 
-pub fn run(module: &String, program: &mut ProgramState) -> Result<(), AnyError> {
+pub fn run(module: &String, program: &mut ProgramState, inspect: bool) -> Result<(), AnyError> {
 	let mut editor: Editor<()> = Editor::<()>::new();
 	editor.load_history(".gl_history").unwrap_or(());
 
@@ -23,45 +22,34 @@ pub fn run(module: &String, program: &mut ProgramState) -> Result<(), AnyError> 
 		Cmd::Insert(1, format!("\t")),
 	);
 
-	println!("GL {}", crate_version!());
-	println!("exit using ctrl+d");
-	println!("use alt+enter to run source");
+	if inspect == false {
+		println!("GL {}", crate_version!());
+		println!("exit using ctrl+d");
+		println!("use alt+enter to run source");
+	}
 
 	loop {
 		match editor.readline(">>> ") {
 			Ok(source) => {
-				let mut lexer: Lexer = Lexer::new();
-				let tokens: Vec<Token> = match lexer.run(source.clone(), module, program) {
-					Ok(tokens) => tokens,
-					Err(exception) => {
-						eprintln!("{}", exception);
-						continue;
-					}
-				};
-				editor.add_history_entry(source);
-
-				let mut parser: Parser = Parser::new();
-				let ast: AbstractSyntaxTree = match parser.run(tokens, module, program) {
-					Ok(ast) => ast,
-					Err(exception) => {
-						eprintln!("{}", exception);
-						continue;
-					}
-				};
-
+				editor.add_history_entry(source.clone());
+				let source: Source = Source::new_from_string(source).unwrap();
+				let lexer: Lexer = Lexer::new(source, module);
+				let parser: Parser = Parser::new(lexer);
 				let runtime: Runtime =
-					Runtime::new_from_env(Rc::clone(&program.env.modules[module]));
-				let object: Object = match runtime.run(ast, module, program) {
-					Ok(object) => object,
-					Err(exception) => {
-						eprintln!("{}", exception);
-						continue;
-					}
-				};
+					Runtime::new_from_env(Arc::clone(&program.env.modules[module]), module);
+				let object: std::sync::Arc<std::sync::Mutex<Box<dyn Object>>> =
+					match runtime.run_with_parser(parser, program) {
+						Ok(object) => object,
+						Err(exception) => {
+							eprintln!("{}", exception);
+							continue;
+						}
+					};
+				editor.save_history(".gl_history").unwrap_or(());
 
-				match object {
-					Object::Null => {}
-					object => println!("{}", object),
+				if object.lock().unwrap().is::<Null>() {
+				} else {
+					println!("{}", object.lock().unwrap())
 				}
 			}
 			Err(ReadlineError::Interrupted) => {
@@ -77,8 +65,6 @@ pub fn run(module: &String, program: &mut ProgramState) -> Result<(), AnyError> 
 			}
 		}
 	}
-
-	editor.save_history(".gl_history").unwrap_or(());
 
 	Ok(())
 }

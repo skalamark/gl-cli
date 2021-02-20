@@ -2,6 +2,8 @@
 
 use gl_core::error::AnyError;
 use gl_core::state::ProgramState;
+use gl_std::Std;
+use std::sync::{Arc, Mutex};
 
 mod cli;
 mod flags;
@@ -41,20 +43,23 @@ fn run_subcommand(flags: flags::Flags) -> Result<(), AnyError> {
 		GLanguageSubCommand::Repl => run_repl(flags),
 		GLanguageSubCommand::Eval { source } => run_eval(source, flags),
 		GLanguageSubCommand::Run { filename, inspect } => run_run(filename, inspect, flags),
+		GLanguageSubCommand::Compile { filename } => compile_run(filename, flags),
 	}
 }
 
 fn run_repl(_: flags::Flags) -> Result<(), AnyError> {
-	let mut program_state: ProgramState = ProgramState::new();
+	let env: gl_core::env::Env = Std::new();
+	let mut program_state: ProgramState = ProgramState::new(Arc::new(Mutex::new(env)));
 	program_state.env.crate_module = format!("repl");
 	program_state.env.add_module(format!("repl"));
 	let module: String = format!("repl");
 
-	tools::repl::run(&module, &mut program_state)
+	tools::repl::run(&module, &mut program_state, false)
 }
 
 fn run_eval(source: String, _: flags::Flags) -> Result<(), AnyError> {
-	let mut program_state: ProgramState = ProgramState::new();
+	let env: gl_core::env::Env = Std::new();
+	let mut program_state: ProgramState = ProgramState::new(Arc::new(Mutex::new(env)));
 	program_state.env.crate_module = format!("eval");
 	program_state.env.add_module(format!("eval"));
 	let module: String = format!("eval");
@@ -63,7 +68,8 @@ fn run_eval(source: String, _: flags::Flags) -> Result<(), AnyError> {
 }
 
 fn run_run(filename: String, inspect: bool, _: flags::Flags) -> Result<(), AnyError> {
-	let mut program_state: ProgramState = ProgramState::new();
+	let env: gl_core::env::Env = Std::new();
+	let mut program_state: ProgramState = ProgramState::new(Arc::new(Mutex::new(env)));
 	program_state.env.crate_module = format!("{}", &filename);
 	program_state.env.add_module(format!("{}", &filename));
 	let module: String = format!("{}", &filename);
@@ -74,8 +80,13 @@ fn run_run(filename: String, inspect: bool, _: flags::Flags) -> Result<(), AnyEr
 	}
 
 	if inspect {
-		tools::repl::run(&module, &mut program_state)
+		tools::repl::run(&module, &mut program_state, true)
 	} else {
 		r
 	}
+}
+
+fn compile_run(filename: String, _: flags::Flags) -> Result<(), AnyError> {
+	let r: Result<(), AnyError> = tools::compile::run(filename);
+	r
 }
