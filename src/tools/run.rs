@@ -1,20 +1,15 @@
 // Copyright 2021 the GLanguage authors. All rights reserved. MIT license.
 
-use gl_core::ast::AbstractSyntaxTree;
-use gl_core::error::AnyError;
-use gl_core::lexer::Lexer;
-use gl_core::parser::Parser;
+use gl_core::preludes::*;
 use gl_core::state::ProgramState;
-use gl_core::token::Token;
-use gl_runtime::Runtime;
-use std::rc::Rc;
+use gl_runtime::preludes::*;
 
 pub fn run(filename: String, module: &String, program: &mut ProgramState) -> Result<(), AnyError> {
-	let source: String = {
+	let source: Source = {
 		let path_filename: &std::path::Path = std::path::Path::new(&filename);
 		if path_filename.exists() && path_filename.is_file() {
 			if filename.ends_with(".gl") {
-				std::fs::read_to_string(&filename).expect("")
+				Source::from_string(std::fs::read_to_string(&filename).expect("")).unwrap()
 			} else {
 				eprintln!("GL: Invalid file extension, expected file with extension '.gl'");
 				return Ok(());
@@ -25,26 +20,11 @@ pub fn run(filename: String, module: &String, program: &mut ProgramState) -> Res
 		}
 	};
 
-	let mut lexer: Lexer = Lexer::new();
-	let tokens: Vec<Token> = match lexer.run(source, module, program) {
-		Ok(tokens) => tokens,
-		Err(exception) => {
-			eprintln!("{}", exception);
-			return Ok(());
-		}
-	};
-
-	let mut parser: Parser = Parser::new();
-	let ast: AbstractSyntaxTree = match parser.run(tokens, module, program) {
-		Ok(ast) => ast,
-		Err(exception) => {
-			eprintln!("{}", exception);
-			return Ok(());
-		}
-	};
-
-	let runtime: Runtime = Runtime::new_from_env(Rc::clone(&program.env.modules[module]));
-	match runtime.run(ast, module, program) {
+	let lexer: Lexer = Lexer::new(source, module);
+	let parser: Parser = Parser::new(lexer);
+	let runtime: Runtime =
+		Runtime::from_env(Rc::clone(&program.env.modules[module]), module.clone());
+	match runtime.run_with_parser(parser) {
 		Ok(_) => {}
 		Err(exception) => {
 			eprintln!("{}", exception);
