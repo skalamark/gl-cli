@@ -1,81 +1,85 @@
 // Copyright 2021 the GLanguage authors. All rights reserved. MIT license.
 
-use gl_core::error::AnyError;
-use gl_core::state::ProgramState;
+use clap::Clap;
+use cli::*;
+use gl_core::preludes::*;
+use gl_std::*;
 
 mod cli;
-mod flags;
 mod tools;
 
+type ResultCli = Result<(), Exception>;
+
 fn main() {
-	let args: Vec<String> = std::env::args().collect();
-	let flags: flags::Flags = match flags::Flags::from_args_vec(args) {
-		Ok(flags) => flags,
-		Err(err)
-			if err.kind == clap::ErrorKind::HelpDisplayed
-				|| err.kind == clap::ErrorKind::VersionDisplayed =>
-		{
-			err.write_to(&mut std::io::stdout()).unwrap();
-			std::process::exit(0);
-		}
-		Err(err) => unwrap_or_exit(Err(AnyError::from(err))),
+	let opts: Opts = match Opts::try_parse() {
+		Ok(opts) => opts,
+		Err(err) if err.kind == clap::ErrorKind::MissingArgumentOrSubcommand =>
+			Opts { subcmd: SubCommand::Repl(Repl {}) },
+		Err(err) => {
+			err.exit();
+		},
 	};
 
-	run_subcommand(flags).expect("");
-}
-
-fn unwrap_or_exit<T>(result: Result<T, AnyError>) -> T {
-	match result {
-		Ok(value) => value,
-		Err(error) => {
-			eprintln!("{}", format!("error: {}", error.to_string().trim()));
-			std::process::exit(1);
+	match {
+		match opts.subcmd {
+			SubCommand::Repl(Repl {}) => run_repl(),
+			SubCommand::Eval(Eval { inspect, mut code_args }) => {
+				let source = code_args.remove(0);
+				run_eval(source, inspect, code_args)
+			},
+			SubCommand::Run(Run { inspect, mut script_args }) => {
+				let filename = script_args.remove(0);
+				run_run(filename, inspect, script_args)
+			},
 		}
+	} {
+		Ok(_) => {},
+		Err(exception) => {
+			eprintln!("{}", exception)
+		},
 	}
 }
 
-fn run_subcommand(flags: flags::Flags) -> Result<(), AnyError> {
-	use flags::GLanguageSubCommand;
-
-	match flags.clone().subcommand {
-		GLanguageSubCommand::Repl => run_repl(flags),
-		GLanguageSubCommand::Eval { source } => run_eval(source, flags),
-		GLanguageSubCommand::Run { filename, inspect } => run_run(filename, inspect, flags),
-	}
+fn create_program<T: Into<String>>(module: T) -> (ProgramState, String) {
+	let module: String = module.into();
+	let mut program_state: ProgramState = ProgramState::with_std(&module, Std::new());
+	program_state.add_module(&module);
+	(program_state, module)
 }
 
-fn run_repl(_: flags::Flags) -> Result<(), AnyError> {
-	let mut program_state: ProgramState = ProgramState::new();
-	program_state.env.crate_module = format!("repl");
-	program_state.env.add_module(format!("repl"));
-	let module: String = format!("repl");
-
-	tools::repl::run(&module, &mut program_state)
+fn run_repl() -> ResultCli {
+	let (mut program, module) = create_program("repl");
+	tools::repl::run(module, &mut program)
 }
 
-fn run_eval(source: String, _: flags::Flags) -> Result<(), AnyError> {
-	let mut program_state: ProgramState = ProgramState::new();
-	program_state.env.crate_module = format!("eval");
-	program_state.env.add_module(format!("eval"));
-	let module: String = format!("eval");
-
-	tools::eval::run(source, &module, &mut program_state)
-}
-
-fn run_run(filename: String, inspect: bool, _: flags::Flags) -> Result<(), AnyError> {
-	let mut program_state: ProgramState = ProgramState::new();
-	program_state.env.crate_module = format!("{}", &filename);
-	program_state.env.add_module(format!("{}", &filename));
-	let module: String = format!("{}", &filename);
-
-	let r: Result<(), AnyError> = tools::run::run(filename, &module, &mut program_state);
-	if r.is_err() {
-		return Err(r.err().unwrap());
-	}
+fn run_eval(source: String, inspect: bool, _: Vec<String>) -> ResultCli {
+	let (mut program, module) = create_program("eval");
+	let result_program = tools::eval::run(&source, &module, &mut program);
 
 	if inspect {
-		tools::repl::run(&module, &mut program_state)
-	} else {
-		r
+		if let Err(exception) = result_program {
+			eprintln!("{}", exception)
+		}
+
+		println!();
+		return tools::repl::run(module, &mut program);
 	}
+
+	result_program
+}
+
+fn run_run(filename: String, inspect: bool, _: Vec<String>) -> ResultCli {
+	let (mut program, module) = create_program(&filename);
+	let result_program = tools::run::run(&filename, &module, &mut program);
+
+	if inspect {
+		if let Err(exception) = result_program {
+			eprintln!("{}", exception)
+		}
+
+		println!();
+		return tools::repl::run(module, &mut program);
+	}
+
+	result_program
 }
