@@ -1,40 +1,44 @@
 // Copyright 2021 the GLanguage authors. All rights reserved. MIT license.
 
-use clap::crate_version;
-use clap::{App, Arg, SubCommand};
+use clap::{crate_version, Clap};
 
-const USAGE: &str = "
-gl [SUBCOMMAND]
-
-To start the REPL:
-    gl
-";
-
-pub fn create_app<'a, 'b>() -> App<'a, 'b> {
-	clap::App::new("gl")
-		.bin_name("gl")
-		.version(crate_version!())
-		.long_version(crate_version!())
-		.about("Interface de linha de comando para utilização da linguagem de script GLanguage")
-		.usage(USAGE.trim())
-		.subcommand(repl_subcommand())
-		.subcommand(eval_subcommand())
-		.subcommand(run_subcommand())
+/// CLI GLanguage
+#[derive(Clap)]
+#[clap(bin_name = "gl", version = crate_version!())]
+pub struct Opts {
+	#[clap(subcommand)]
+	pub subcmd: SubCommand,
 }
 
-fn repl_subcommand<'a, 'b>() -> App<'a, 'b> {
-	SubCommand::with_name("repl").about("Read Eval Print Loop")
+#[derive(Clap)]
+pub enum SubCommand {
+	Repl(Repl),
+	Eval(Eval),
+	Run(Run),
 }
 
-fn eval_subcommand<'a, 'b>() -> App<'a, 'b> {
-	SubCommand::with_name("eval")
-		.about("Evaluate source from the command line")
-		.arg(Arg::with_name("source").required(true))
+/// Read Eval Print Loop
+#[derive(Clap, Clone)]
+pub struct Repl {}
+
+/// Evaluate code in the shell
+#[derive(Clap, Clone)]
+#[clap(setting = clap::AppSettings::TrailingVarArg)]
+pub struct Eval {
+	/// Inspect interactively after running script
+	#[clap(short, long)]
+	pub inspect: bool,
+	#[clap(setting = clap::ArgSettings::Required)]
+	pub code_args: Vec<String>,
 }
 
-fn run_subcommand<'a, 'b>() -> App<'a, 'b> {
-	SubCommand::with_name("run")
-		.about("Run program from a script file")
-		.arg(Arg::with_name("filename").required(true))
-		.arg(Arg::with_name("inspect").short("i").required(false))
+/// Run a program given a filename
+#[derive(Clap, Clone)]
+#[clap(setting = clap::AppSettings::TrailingVarArg)]
+pub struct Run {
+	/// Inspect interactively after running script
+	#[clap(short, long)]
+	pub inspect: bool,
+	#[clap(setting = clap::ArgSettings::Required)]
+	pub script_args: Vec<String>,
 }
