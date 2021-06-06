@@ -31,6 +31,7 @@ fn main() {
 				let filename = script_args.remove(0);
 				run_run(filename, inspect, script_args)
 			},
+			SubCommand::Fmt(Fmt { filename, format_args }) => fmt_run(filename, format_args),
 		}
 	} {
 		Ok(_) => {},
@@ -81,5 +82,11 @@ fn run_run(filename: String, inspect: bool, _: Vec<String>) -> ResultCli {
 		return tools::repl::run(module, &mut program);
 	}
 
+	result_program
+}
+
+fn fmt_run(filename: String, _: Vec<String>) -> ResultCli {
+	let (_, module) = create_program(&filename);
+	let result_program = tools::fmt::run(&filename, &module);
 	result_program
 }

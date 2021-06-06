@@ -15,6 +15,7 @@ pub enum SubCommand {
 	Repl(Repl),
 	Eval(Eval),
 	Run(Run),
+	Fmt(Fmt),
 }
 
 /// Read Eval Print Loop
@@ -41,4 +42,13 @@ pub struct Run {
 	pub inspect: bool,
 	#[clap(setting = clap::ArgSettings::Required)]
 	pub script_args: Vec<String>,
+}
+
+/// Format source files
+#[derive(Clap, Clone)]
+#[clap(setting = clap::AppSettings::TrailingVarArg)]
+pub struct Fmt {
+	#[clap(setting = clap::ArgSettings::Required)]
+	pub filename: String,
+	pub format_args: Vec<String>,
 }
