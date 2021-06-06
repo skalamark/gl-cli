@@ -12,6 +12,7 @@ description = "CLI GLanguage"
 
 [dependencies]
 gl_core = { path = "../gl-core", version = "0.1.0-alpha" }
+gl_fmt = { path = "../gl-fmt", version = "0.1.0-alpha" }
 gl_runtime = { path = "../gl-runtime", version = "0.1.0-alpha" }
 gl_std = { path = "../gl-std", version = "0.1.0-alpha" }
 
