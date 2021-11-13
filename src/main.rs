@@ -1,19 +1,22 @@
 // Copyright 2021 the GLanguage authors. All rights reserved. MIT license.
 
-use clap::Clap;
+use clap::Parser;
 use cli::*;
 use gl_core::preludes::*;
 use gl_std::*;
+use starts::{start_eval, start_fmt, start_repl};
+
+use crate::starts::start_run;
 
 mod cli;
-mod tools;
+mod starts;
 
 type ResultCli = Result<(), Exception>;
 
 fn main() {
 	let opts: Opts = match Opts::try_parse() {
 		Ok(opts) => opts,
-		Err(err) if err.kind == clap::ErrorKind::MissingArgumentOrSubcommand =>
+		Err(err) if err.kind == clap::ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand =>
 			Opts { subcmd: SubCommand::Repl(Repl {}) },
 		Err(err) => {
 			err.exit();
@@ -41,21 +44,20 @@ fn main() {
 	}
 }
 
-fn create_program<T: Into<String>>(module: T) -> (ProgramState, String) {
-	let module: String = module.into();
-	let mut program_state: ProgramState = ProgramState::with_std(&module, Std::new());
-	program_state.add_module(&module);
-	(program_state, module)
+fn create_program() -> Interpreter {
+	let mut interpreter: Interpreter = Interpreter::new();
+	Std::new(&mut interpreter);
+	interpreter
 }
 
 fn run_repl() -> ResultCli {
-	let (mut program, module) = create_program("repl");
-	tools::repl::run(module, &mut program)
+	let mut program = create_program();
+	start_repl(&mut program)
 }
 
 fn run_eval(source: String, inspect: bool, _: Vec<String>) -> ResultCli {
-	let (mut program, module) = create_program("eval");
-	let result_program = tools::eval::run(&source, &module, &mut program);
+	let mut program = create_program();
+	let result_program = start_eval(&source, &mut program);
 
 	if inspect {
 		if let Err(exception) = result_program {
@@ -63,15 +65,15 @@ fn run_eval(source: String, inspect: bool, _: Vec<String>) -> ResultCli {
 		}
 
 		println!();
-		return tools::repl::run(module, &mut program);
+		return start_repl(&mut program);
 	}
 
 	result_program
 }
 
 fn run_run(filename: String, inspect: bool, _: Vec<String>) -> ResultCli {
-	let (mut program, module) = create_program(&filename);
-	let result_program = tools::run::run(&filename, &module, &mut program);
+	let mut program = create_program();
+	let result_program = start_run(&filename, &mut program);
 
 	if inspect {
 		if let Err(exception) = result_program {
@@ -79,14 +81,10 @@ fn run_run(filename: String, inspect: bool, _: Vec<String>) -> ResultCli {
 		}
 
 		println!();
-		return tools::repl::run(module, &mut program);
+		return start_repl(&mut program);
 	}
 
 	result_program
 }
 
-fn fmt_run(filename: String, _: Vec<String>) -> ResultCli {
-	let (_, module) = create_program(&filename);
-	let result_program = tools::fmt::run(&filename, &module);
-	result_program
-}
+fn fmt_run(filename: String, _: Vec<String>) -> ResultCli { start_fmt(&filename) }
