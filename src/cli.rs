@@ -1,16 +1,16 @@
 // Copyright 2021 the GLanguage authors. All rights reserved. MIT license.
 
-use clap::{crate_version, Clap};
+use clap::{crate_version, Parser};
 
 /// CLI GLanguage
-#[derive(Clap)]
+#[derive(Parser)]
 #[clap(bin_name = "gl", version = crate_version!())]
 pub struct Opts {
 	#[clap(subcommand)]
 	pub subcmd: SubCommand,
 }
 
-#[derive(Clap)]
+#[derive(Parser)]
 pub enum SubCommand {
 	Repl(Repl),
 	Eval(Eval),
@@ -19,11 +19,11 @@ pub enum SubCommand {
 }
 
 /// Read Eval Print Loop
-#[derive(Clap, Clone)]
+#[derive(Parser, Clone)]
 pub struct Repl {}
 
 /// Evaluate code in the shell
-#[derive(Clap, Clone)]
+#[derive(Parser, Clone)]
 #[clap(setting = clap::AppSettings::TrailingVarArg)]
 pub struct Eval {
 	/// Inspect interactively after running script
@@ -34,7 +34,7 @@ pub struct Eval {
 }
 
 /// Run a program given a filename
-#[derive(Clap, Clone)]
+#[derive(Parser, Clone)]
 #[clap(setting = clap::AppSettings::TrailingVarArg)]
 pub struct Run {
 	/// Inspect interactively after running script
@@ -45,7 +45,7 @@ pub struct Run {
 }
 
 /// Format source files
-#[derive(Clap, Clone)]
+#[derive(Parser, Clone)]
 #[clap(setting = clap::AppSettings::TrailingVarArg)]
 pub struct Fmt {
 	#[clap(setting = clap::ArgSettings::Required)]
